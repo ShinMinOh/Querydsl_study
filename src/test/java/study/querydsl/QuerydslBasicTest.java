@@ -1,5 +1,6 @@
 package study.querydsl;
 
+import com.querydsl.core.QueryResults;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import org.assertj.core.api.Assertions;
@@ -11,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.QMember;
 import study.querydsl.entity.Team;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 import static study.querydsl.entity.QMember.member;
@@ -71,7 +74,7 @@ public class QuerydslBasicTest {
         assertThat(findMember.getUsername()).isEqualTo("member1");
     }
 
-    @Test
+    @Test //검색 조건 쿼리
     public void search(){
         Member findMember = queryFactory
                 .selectFrom(member)
@@ -82,7 +85,7 @@ public class QuerydslBasicTest {
         assertThat(findMember.getUsername()).isEqualTo("member1");
     }
 
-    @Test
+    @Test //검색 조건 쿼리
     public void searchAndParam(){   //위 serch()와 같은 결과가 나옴. where 문에 and 없이 쓰는 법.
         Member findMember = queryFactory
                 .selectFrom(member)
@@ -94,4 +97,37 @@ public class QuerydslBasicTest {
 
         assertThat(findMember.getUsername()).isEqualTo("member1");
     }
+
+    @Test // 결과 조회
+    public void resultFetch(){
+        //리스트 조회
+        List<Member> fetch = queryFactory
+                .selectFrom(member)
+                .fetch();
+
+        //단건 조회
+        Member fetchOne = queryFactory
+                .selectFrom(member)
+                .fetchOne();
+
+        //처음 한건 조회
+        Member fetchFirst = queryFactory
+                .selectFrom(member)
+                .fetchFirst();
+
+      /*
+       //페이징에서 사용
+       QueryResults<Member> results = queryFactory
+                .selectFrom(member)
+                .fetchResults();            // 복잡하고 성능이 중요한 페이징 쿼리에서는 사용하면 안됨. 그냥 쿼리 2번 따로 날려야함.
+
+        results.getTotal();                     //페이징 하기 위한 totalCount 가져오고
+        List<Member> content = results.getResults();    //contents를 가져옴.*/
+
+        //count 쿼리로 변경
+        long count = queryFactory
+                .selectFrom(member)
+                .fetchCount();
+    }
+
 }
