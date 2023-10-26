@@ -13,6 +13,7 @@ import study.querydsl.entity.QMember;
 import study.querydsl.entity.Team;
 
 import static org.assertj.core.api.Assertions.*;
+import static study.querydsl.entity.QMember.member;
 
 @SpringBootTest
 @Transactional
@@ -21,8 +22,12 @@ public class QuerydslBasicTest {
     @Autowired
     EntityManager em;
 
+    JPAQueryFactory queryFactory;
+
     @BeforeEach//각 테스트 실행전에 데이터 미리 세팅 위해서
     public void before(){
+        queryFactory = new JPAQueryFactory(em);
+
         Team teamA = new Team("teamA");
         Team teamB = new Team("teamB");
         em.persist(teamA);
@@ -55,13 +60,36 @@ public class QuerydslBasicTest {
 
     @Test
     public void versionQuerydsl(){
-        JPAQueryFactory queryFactory = new JPAQueryFactory(em);     //JPAQueryFactory를 만들 때, EntityManager를 넘겨줘야함. 그래야 데이터를 찾던가 할 수 있음.
-        QMember m = new QMember("m"); //어떤 QMember인지 구분하는 variable
+        //QMember m = new QMember("m"); //어떤 QMember인지 구분하는 variable
 
         Member findMember = queryFactory
-                .select(m)
-                .from(m)
-                .where(m.username.eq("member1"))        //파라미터 바인딩 처리
+                .select(member)
+                .from(member)
+                .where(member.username.eq("member1"))        //파라미터 바인딩 처리
+                .fetchOne();
+
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+    }
+
+    @Test
+    public void search(){
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .where(member.username.eq("member1")
+                        .and(member.age.eq(10)))
+                .fetchOne();
+
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+    }
+
+    @Test
+    public void searchAndParam(){   //위 serch()와 같은 결과가 나옴. where 문에 and 없이 쓰는 법.
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .where(
+                        member.username.eq("member1"),
+                        member.age.eq(10)
+                )
                 .fetchOne();
 
         assertThat(findMember.getUsername()).isEqualTo("member1");
