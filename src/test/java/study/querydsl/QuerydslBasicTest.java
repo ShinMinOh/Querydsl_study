@@ -1,6 +1,7 @@
 package study.querydsl;
 
 import com.querydsl.core.QueryResults;
+import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import org.assertj.core.api.Assertions;
@@ -12,12 +13,14 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.QMember;
+import study.querydsl.entity.QTeam;
 import study.querydsl.entity.Team;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 import static study.querydsl.entity.QMember.member;
+import static study.querydsl.entity.QTeam.team;
 
 @SpringBootTest
 @Transactional
@@ -186,6 +189,52 @@ public class QuerydslBasicTest {
         assertThat(queryResults.getOffset()).isEqualTo(1);
         assertThat(queryResults.getResults().size()).isEqualTo(2);
 
+    }
+
+    /**
+     * 집합 연산
+     * */
+    @Test
+    public void aggregation(){
+        List<Tuple> result = queryFactory //Tuple: querydsl이 제공하는 타입으로 data타입이 여러개로 들어올 때 사용. 실무에서는 별로 안쓰이고 대신 DTO로 사용.
+            .select(
+                member.count(),
+                member.age.sum(),
+                member.age.avg(),
+                member.age.max(),
+                member.age.min()
+            )
+            .from(member)
+            .fetch();
+
+        Tuple tuple = result.get(0);
+        assertThat(tuple.get(member.count())).isEqualTo(4);
+        assertThat(tuple.get(member.age.sum())).isEqualTo(100);
+        assertThat(tuple.get(member.age.avg())).isEqualTo(25);
+        assertThat(tuple.get(member.age.max())).isEqualTo(40);
+        assertThat(tuple.get(member.age.min())).isEqualTo(10);
+    }
+
+    /**
+     * 팀의 이름과 각 팀의 평균 연령을 구해라.
+     */
+    @Test
+    public void group() throws Exception{
+        List<Tuple> result = queryFactory
+            .select(team.name, member.age.avg())
+            .from(member)
+            .join(member.team, team)  //member에 있는 team과 team을 join.
+            .groupBy(team.name)       //team의 이름으로 grouping
+            .fetch();
+
+        //groupBy를 팀의 이름으로 했으므로 결과도 teamA, teamB 두개가 나올것이다.
+        Tuple resultA = result.get(0);
+        Tuple resultB = result.get(1);
+
+        assertThat(resultA.get(team.name)).isEqualTo("teamA");
+        assertThat(resultA.get(member.age.avg())).isEqualTo(15);
+        assertThat(resultB.get(team.name)).isEqualTo("teamB");
+        assertThat(resultB.get(member.age.avg())).isEqualTo(35);
     }
 
 
