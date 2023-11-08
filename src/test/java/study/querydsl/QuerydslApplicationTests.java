@@ -37,5 +37,4 @@ class QuerydslApplicationTests {
 		assertThat(result).isEqualTo(hello);					//Querydsl Q타입이 정상 동작하는가?
 		assertThat(result.getId()).isEqualTo(hello.getId());	// lombok이 정상 동작하는가?
 	}
-
 }
