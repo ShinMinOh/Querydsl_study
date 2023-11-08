@@ -2,6 +2,7 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -352,7 +353,33 @@ public class QuerydslBasicTest {
 
         boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
 
-        assertThat(loaded).as("페치 조인 미적용").isTrue();
-
+        assertThat(loaded).as("페치 조인 적용").isTrue();
     }
+
+    /**
+     * 나이가 가장 많은 회원 조회
+     *  */
+    @Test
+    public void subQuery(){
+        QMember memberSub = new QMember("memberSub");
+        //allias가 중복되면 안되는 경우 새로운 allias로 선언. 밖에 있는 allias랑 서브쿼리에서 쓰는 allias는 같으면 안됨.eq안에 서브쿼리가 들어감.
+
+        List<Member> result = queryFactory
+            .selectFrom(member)
+            .where(member.age.eq(
+                JPAExpressions
+                    .select(memberSub.age.max())
+                    .from(memberSub)
+            ))
+            .fetch();
+
+        for (Member findMember : result) {
+            System.out.println("findMember = "+findMember);
+        }
+
+        assertThat(result).extracting("age").containsExactly(40);
+    }
+
+
+
 }
