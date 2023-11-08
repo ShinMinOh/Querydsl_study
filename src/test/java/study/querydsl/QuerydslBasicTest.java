@@ -381,5 +381,31 @@ public class QuerydslBasicTest {
     }
 
 
+    /**
+     * 나이가 평균 이상인 회원 조회
+     *  */
+    @Test
+    public void subQueryGoe(){
+        QMember memberSub = new QMember("memberSub");
+        //allias가 중복되면 안되는 경우 새로운 allias로 선언. 밖에 있는 allias랑 서브쿼리에서 쓰는 allias는 같으면 안됨.eq안에 서브쿼리가 들어감.
+
+        List<Member> result = queryFactory
+            .selectFrom(member)
+            .where(member.age.goe(
+                JPAExpressions
+                    .select(memberSub.age.avg())
+                    .from(memberSub)
+            ))
+            .fetch();
+
+        for (Member findMember : result) {
+            System.out.println("findMember = "+findMember);
+        }
+
+        assertThat(result).extracting("age").containsExactly(30, 40);
+    }
+
+
+
 
 }
