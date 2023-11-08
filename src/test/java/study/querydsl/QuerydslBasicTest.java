@@ -274,5 +274,23 @@ public class QuerydslBasicTest {
             .containsExactly("teamA", "teamB");
     }
 
+    /**
+     * 예) 회원과 팀을 조인하면서, 팀 이름이 teamA인 팀만 조인, 회원은 모두 조회.
+     * JPQL: select m,t from Member m left join m.team t on t.name = 'teamA'
+     * 멤버는 다 가져오는데, 팀은 teamA인팀 하나만 선택
+     * */
+    @Test
+    public void join_on_filtering(){
+        List<Tuple> result = queryFactory
+            .select(member, team)
+            .from(member)
+            .leftJoin(member.team, team).on(team.name.eq("teamA"))
+            .fetch();
 
+        for (Tuple tuple : result) {
+            System.out.println("tuple = "+tuple);
+        }
+
+
+    }
 }
