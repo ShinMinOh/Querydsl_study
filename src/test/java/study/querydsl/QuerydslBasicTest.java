@@ -4,6 +4,9 @@ import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.PersistenceUnit;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -312,5 +315,44 @@ public class QuerydslBasicTest {
         for (Tuple tuple : result) {
             System.out.println("tuple = "+tuple);
         }
+    }
+
+
+    @PersistenceUnit    //EntityManager를 만드는 factory
+    EntityManagerFactory emf;
+
+    @Test
+    public void fetchJoinNO(){
+        em.flush();
+        em.clear();
+
+        Member findMember = queryFactory
+            .selectFrom(member)
+            .where(member.username.eq("member1"))
+            .fetchOne();
+
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());//괄호 안에 엔티티가 초기화된 엔티티인지 아닌지 알려줌.
+
+        assertThat(loaded).as("페치 조인 미적용").isFalse();
+        //Member 엔티티에 Team은 Lazy로 세팅이 되어있다.
+        // 현재 findMember에서 Team이 쓰이지 않아 아직 호출되기 전 상태이다.
+        // 따라서 findMember를 호출했을때 getTeam을 햇을 경우 아직 불리지 않았으므로 로딩(초기화)이 false가 나와야 한다.
+    }
+
+    @Test
+    public void fetchJoinUse(){
+        em.flush();
+        em.clear();
+
+        Member findMember = queryFactory
+            .selectFrom(member)
+            .join(member.team, team).fetchJoin()
+            .where(member.username.eq("member1"))
+            .fetchOne();
+
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
+
+        assertThat(loaded).as("페치 조인 미적용").isTrue();
+
     }
 }
