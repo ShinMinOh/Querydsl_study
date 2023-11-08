@@ -290,7 +290,27 @@ public class QuerydslBasicTest {
         for (Tuple tuple : result) {
             System.out.println("tuple = "+tuple);
         }
+    }
 
+    /**
+     * 세타 조인
+     * 회원의 이름이 팀 이름과 같은 회원 조회
+     * 세타 조인인 경우 left join이 불가능함. 그래서 그것을 가능하게 하는 방법 설명.
+     * */
+    @Test
+    public void join_on_no_relation(){
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+        em.persist(new Member("teamC"));
 
+        List<Tuple> result = queryFactory
+            .select(member, team)
+            .from(member)
+            .leftJoin(team).on(member.username.eq(team.name))   //원래는 leftJoin(member.team, team).on(member.username.eq(team.name))임.
+            .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println("tuple = "+tuple);
+        }
     }
 }
