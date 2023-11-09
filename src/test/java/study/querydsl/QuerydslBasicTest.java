@@ -484,7 +484,9 @@ public class QuerydslBasicTest {
         //전환하고 바꾸고 하는 case문 예제의 경우 DB보다는 애플리케이션이나 프레젠테이션 레이어에서 해결하는 것이 좋은 방법이다.
 
 
-
+    /**
+    * 상수 더하기
+    * */
     @Test
     public void constant(){
         List<Tuple> result = queryFactory
@@ -497,6 +499,9 @@ public class QuerydslBasicTest {
         }
     }
 
+    /**
+     * 문자 더하기
+     * */
     @Test
     public void concat(){
         List<String> result = queryFactory
