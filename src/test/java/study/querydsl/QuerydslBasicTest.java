@@ -337,9 +337,7 @@ public class QuerydslBasicTest {
         boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());//괄호 안에 엔티티가 초기화된 엔티티인지 아닌지 알려줌.
 
         assertThat(loaded).as("페치 조인 미적용").isFalse();
-        //Member 엔티티에 Team은 Lazy로 세팅이 되어있다.
-        // 현재 findMember에서 Team이 쓰이지 않아 아직 호출되기 전 상태이다.
-        // 따라서 findMember를 호출했을때 getTeam을 햇을 경우 아직 불리지 않았으므로 로딩(초기화)이 false가 나와야 한다.
+
     }
 
     @Test
