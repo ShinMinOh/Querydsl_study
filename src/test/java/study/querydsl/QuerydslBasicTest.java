@@ -2,6 +2,8 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -21,6 +23,7 @@ import study.querydsl.entity.Team;
 
 import java.util.List;
 
+import static com.querydsl.jpa.JPAExpressions.*;
 import static org.assertj.core.api.Assertions.*;
 import static study.querydsl.entity.QMember.member;
 import static study.querydsl.entity.QTeam.team;
@@ -334,9 +337,7 @@ public class QuerydslBasicTest {
         boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());//괄호 안에 엔티티가 초기화된 엔티티인지 아닌지 알려줌.
 
         assertThat(loaded).as("페치 조인 미적용").isFalse();
-        //Member 엔티티에 Team은 Lazy로 세팅이 되어있다.
-        // 현재 findMember에서 Team이 쓰이지 않아 아직 호출되기 전 상태이다.
-        // 따라서 findMember를 호출했을때 getTeam을 햇을 경우 아직 불리지 않았으므로 로딩(초기화)이 false가 나와야 한다.
+
     }
 
     @Test
@@ -352,7 +353,132 @@ public class QuerydslBasicTest {
 
         boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
 
-        assertThat(loaded).as("페치 조인 미적용").isTrue();
-
+        assertThat(loaded).as("페치 조인 적용").isTrue();
     }
+
+    /**
+     * 나이가 가장 많은 회원 조회
+     *  */
+    @Test
+    public void subQuery(){
+        QMember memberSub = new QMember("memberSub");
+        //allias가 중복되면 안되는 경우 새로운 allias로 선언. 밖에 있는 allias랑 서브쿼리에서 쓰는 allias는 같으면 안됨.eq안에 서브쿼리가 들어감.
+
+        List<Member> result = queryFactory
+            .selectFrom(member)
+            .where(member.age.eq(
+                select(memberSub.age.max())
+                    .from(memberSub)
+            ))
+            .fetch();
+
+        for (Member findMember : result) {
+            System.out.println("findMember = "+findMember);
+        }
+
+        assertThat(result).extracting("age").containsExactly(40);
+    }
+
+
+    /**
+     * 나이가 평균 이상인 회원 조회
+     *  */
+    @Test
+    public void subQueryGoe(){
+        QMember memberSub = new QMember("memberSub");
+        //allias가 중복되면 안되는 경우 새로운 allias로 선언. 밖에 있는 allias랑 서브쿼리에서 쓰는 allias는 같으면 안됨.eq안에 서브쿼리가 들어감.
+
+        List<Member> result = queryFactory
+            .selectFrom(member)
+            .where(member.age.goe(
+                select(memberSub.age.avg())
+                    .from(memberSub)
+            ))
+            .fetch();
+
+        for (Member findMember : result) {
+            System.out.println("findMember = "+findMember);
+        }
+
+        assertThat(result).extracting("age").containsExactly(30, 40);
+    }
+
+
+    /**
+     * 나이가 10살 이상인 회원 조회
+     *  */
+    @Test
+    public void subQueryIn(){
+        QMember memberSub = new QMember("memberSub");
+        //allias가 중복되면 안되는 경우 새로운 allias로 선언. 밖에 있는 allias랑 서브쿼리에서 쓰는 allias는 같으면 안됨.eq안에 서브쿼리가 들어감.
+
+        List<Member> result = queryFactory
+            .selectFrom(member)
+            .where(member.age.in(
+                select(memberSub.age)
+                    .from(memberSub)
+                    .where(memberSub.age.gt(10))
+            ))
+            .fetch();
+
+        for (Member findMember : result) {
+            System.out.println("findMember = "+findMember);
+        }
+
+        assertThat(result).extracting("age").containsExactly(20, 30, 40);
+    }
+
+
+    /**
+     * select  절 안에서 SubQuery 사용.
+     * */
+    @Test
+    public void selectSubQuery(){
+        QMember memberSub = new QMember("memberSub");
+        List<Tuple> result = queryFactory
+            .select(member.username,
+                select(memberSub.age.avg())     //JPAExpressions static import 시킨것.
+                    .from(memberSub))
+            .from(member)
+            .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println("tuple = "+tuple);
+        }
+    }
+
+
+    @Test
+    public void basicCase(){
+        List<String> result = queryFactory
+            .select(member.age
+                .when(10).then("열살")
+                .when(20).then("스무살")
+                .otherwise("기타"))
+            .from(member)
+            .fetch();
+
+        for (String s : result) {
+            System.out.println("s = "+s);
+        }
+    }
+
+    /**
+     * 복잡한 case문 작성의 경우 Casebuilder 사용
+     */
+    @Test
+    public void complexCase(){
+        List<String> result = queryFactory
+            .select(new CaseBuilder()
+                .when(member.age.between(0, 20)).then("0~20살")
+                .when(member.age.between(21, 30)).then("21~30살")
+                .otherwise("기타"))
+            .from(member)
+            .fetch();
+
+        for (String s : result) {
+            System.out.println("s = "+s);
+        }
+    }
+        //전환하고 바꾸고 하는 case문 예제의 경우 DB보다는 애플리케이션이나 프레젠테이션 레이어에서 해결하는 것이 좋은 방법이다.
 }
