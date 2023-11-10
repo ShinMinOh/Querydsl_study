@@ -2,6 +2,7 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
+import study.querydsl.dto.MemberDto;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.QMember;
 import study.querydsl.entity.QTeam;
@@ -549,5 +551,62 @@ public class QuerydslBasicTest {
 
         }
     }
+
+    /**
+     * 프로젝션과 결과 반환 - DTO 조회 (JPQL ver.)
+     * */
+    @Test
+    public void findDtoByJPQL(){
+        List<MemberDto> result = em.createQuery(
+                "select new study.querydsl.dto.MemberDto(m.username, m.age) from Member m",
+                MemberDto.class)
+            .getResultList();
+            // 단순히 ("select m.username, m.age from Member m", MemberDto.class)를 할경우 Member와 MemberDto간 타입 불일치로 쓸 수 없다.
+            // 따라서 new 오퍼레이션을 활용해 마치 MemberDto안에 생성자를 넣어주는 것처럼 써줘야 한다. new + 패키지명 + MemberDto(  )
+            // setter나 필드 직접 주입이 안됨. 오직 생성자 방식만 가능.
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = "+memberDto);
+        }
+    }
+
+    /**
+     * 프로젝션과 결과 반환 - DTO 조회 (Querydsl ver.)
+     * */
+    @Test   // 프로퍼티 접근 - setter , bean : getter, setter말함.
+    public void findDtoBySetter(){
+        List<MemberDto> result = queryFactory
+            .select(Projections.bean(MemberDto.class, member.username, member.age))
+            .from(member)
+            .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = "+memberDto);
+        }
+    }
+
+    @Test   // 필드 직접 접근 - getter,setter 없이 필드에 직접 꽂힘.
+    public void findDtoByField(){
+        List<MemberDto> result = queryFactory
+            .select(Projections.fields(MemberDto.class, member.username, member.age))
+            .from(member)
+            .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = "+memberDto);
+        }
+    }
+
+    @Test   // 생성자 사용
+    public void findDtoByConstructor(){
+        List<MemberDto> result = queryFactory
+            .select(Projections.constructor(MemberDto.class, member.username, member.age))
+            .from(member)
+            .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = "+memberDto);
+        }
+    }
+
 
 }
