@@ -514,4 +514,40 @@ public class QuerydslBasicTest {
             System.out.println("s = "+s);
         }
     }
+
+    /**
+     * 프로젝션 대상이 1개
+     * */
+    @Test
+    public void simpleProjection(){
+        List<String> result = queryFactory
+            .select(member.username)
+            .from(member)
+            .fetch();
+
+        for (String s : result) {
+            System.out.println("S = "+s);
+        }
+    }
+
+    /**
+     * 프로젝션(select) 대상이 여러개 (tuple)
+     * Tuple은 레포지토리 안에서만 쓰고, 바깥 레이어에 나갈대는 DTO로 변환시켜서 보내는 것이 좋은 설계
+     * */
+    @Test
+    public void tupleProjection(){
+        List<Tuple> result = queryFactory
+            .select(member.username, member.age)
+            .from(member)
+            .fetch();
+
+        for (Tuple tuple : result) {
+            String username = tuple.get(member.username);
+            Integer age = tuple.get(member.age);
+            System.out.println("username = "+username);
+            System.out.println("age = "+age);
+
+        }
+    }
+
 }
