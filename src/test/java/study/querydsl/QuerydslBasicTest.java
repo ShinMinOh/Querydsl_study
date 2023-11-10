@@ -2,6 +2,7 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
@@ -19,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.dto.MemberDto;
+import study.querydsl.dto.UserDto;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.QMember;
 import study.querydsl.entity.QTeam;
@@ -608,5 +610,26 @@ public class QuerydslBasicTest {
         }
     }
 
+
+    @Test   // 필드 직접 접근 사용한 UserDto 조회
+    public void findUserDto(){
+        QMember memberSub = new QMember("memberSub");
+
+        List<UserDto> result = queryFactory
+            .select(Projections.fields(UserDto.class,
+                member.username.as("name"),
+
+                ExpressionUtils.as(
+                    JPAExpressions
+                    .select(memberSub.age.max())
+                    .from(memberSub),"age")     // 두번째 서브쿼리가 이름이 없으므로 ExpressionsUtils의 두번째 파라미터로 alias인 age를 설정하면 UserDto의 age와 매칭된다.
+            ))
+            .from(member)
+            .fetch();
+
+        for (UserDto userDto : result) {
+            System.out.println("userDto = "+userDto);
+        }
+    }
 
 }
