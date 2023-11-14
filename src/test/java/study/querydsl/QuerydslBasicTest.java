@@ -652,6 +652,7 @@ public class QuerydslBasicTest {
         Integer ageParam = null;
 
         List<Member> result = searchMember1(usernameParam, ageParam);
+
         assertThat(result.size()).isEqualTo(1);
     }
 
