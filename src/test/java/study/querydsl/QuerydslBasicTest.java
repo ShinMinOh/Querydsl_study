@@ -726,4 +726,58 @@ public class QuerydslBasicTest {
     private BooleanExpression allEq(String usernameCond, Integer ageCond){
         return usernameEq(usernameCond).and(ageEq(ageCond));
     }
+
+    @Test
+    public void bulkUpdate(){
+        //DB와 영속성 컨텍스트안의 데이터가 일치하지 않을 경우 영속성 컨텍스트의 데이터가 우선권을 가짐.
+
+        //전
+        //영속성 컨텍스트 member1 = 10 -> DB member1
+        //영속성 컨텍스트 member2 = 20 -> DB member2
+        //영속성 컨텍스트 member3 = 30 -> DB member3
+        //영속성 컨텍스트 member4 = 40 -> DB member4
+
+        long count = queryFactory       //영속성 컨텍스트를 거치지 않고 DB에 바로 update 시킴.
+            .update(member)
+            .set(member.username, "비회원")
+            .where(member.age.lt(28))
+            .execute();
+
+        //위와 같은 벌크 연산이 나가면 이미 영속성 컨텍스트의 값과 DB의 값이 맞지 않기 때문에
+        //아래와 같이 em.flush(), em.clear()로 영속성 컨텍스트를 초기화 하는 것이 좋은 방법이다.
+        em.flush();
+        em.clear();
+
+        //후
+        //영속성 컨텍스트 member1 = 10 -> DB 비회원
+        //영속성 컨텍스트 member2 = 20 -> DB 비회원
+        //영속성 컨텍스트 member3 = 30 -> DB member3
+        //영속성 컨텍스트 member4 = 40 -> DB member4
+
+        List<Member> result = queryFactory
+            .selectFrom(member)
+            .fetch();
+
+        for (Member member1 : result) {
+            //비록 DB안의값은 비회원이지만 영속성 컨텍스트 안의 값이 우선권을 가지므로 DB에서 가져온 값을 버림.
+            System.out.println("member1 = "+member1);
+        }
+    }
+
+    @Test
+    public void bulkAdd(){
+        queryFactory
+            .update(member)
+            .set(member.age, member.age.add(2))
+            .execute();
+    }
+
+    @Test
+    public void bulkDelete(){
+        queryFactory
+            .delete(member)
+            .where(member.age.gt(18))
+            .execute();
+    }
+
 }
