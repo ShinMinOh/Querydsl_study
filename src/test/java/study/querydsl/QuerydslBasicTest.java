@@ -772,4 +772,12 @@ public class QuerydslBasicTest {
             .execute();
     }
 
+    @Test
+    public void bulkDelete(){
+        queryFactory
+            .delete(member)
+            .where(member.age.gt(18))
+            .execute();
+    }
+
 }
