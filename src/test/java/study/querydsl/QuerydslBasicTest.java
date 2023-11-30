@@ -763,4 +763,13 @@ public class QuerydslBasicTest {
             System.out.println("member1 = "+member1);
         }
     }
+
+    @Test
+    public void bulkAdd(){
+        queryFactory
+            .update(member)
+            .set(member.age, member.age.add(2))
+            .execute();
+    }
+
 }
