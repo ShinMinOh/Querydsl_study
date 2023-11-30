@@ -779,5 +779,4 @@ public class QuerydslBasicTest {
             .where(member.age.gt(18))
             .execute();
     }
-
 }
