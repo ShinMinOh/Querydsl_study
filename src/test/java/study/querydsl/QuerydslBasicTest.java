@@ -780,6 +780,7 @@ public class QuerydslBasicTest {
             .execute();
     }
 
+
     @Test
     public  void sqlFunction(){
         List<String> result = queryFactory
@@ -796,3 +797,4 @@ public class QuerydslBasicTest {
 
     }
 }
+
