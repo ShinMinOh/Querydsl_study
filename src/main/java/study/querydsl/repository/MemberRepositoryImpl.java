@@ -76,6 +76,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom{
     return new PageImpl<>(content, pageable, total);
   }
 
+  //totalCount를 분리해서 따로 넘겨주는 코드.
   @Override
   public Page<MemberTeamDto> searchPageComplex(MemberSearchCondition condition, Pageable pageable) {
 
